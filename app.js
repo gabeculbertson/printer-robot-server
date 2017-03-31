@@ -8,6 +8,8 @@ var pdf = require('html-pdf');
 var needle = require('needle');
 var multer = require('multer');
 
+var getEntities = require('./libs/entity-request').getEntities;
+
 var exec = require('child_process').exec;
 var cmd = 'xelatex out.tex';
 
@@ -111,8 +113,12 @@ var httpServer = http.createServer(app);
 httpServer.listen(80);
 
 var io = require('socket.io')(httpServer);
+var timeout = null;
+var currentEntities = {};
 
 io.on('connection', function(client){
+    io.sockets.emit('text-message', "Hello human. What do you want to write about today?");
+
     console.log('connected');
     client.on('event', function(data){ console.log("client event"); });
     client.on('disconnect', function(){ console.log("client disconnect"); });
@@ -120,6 +126,39 @@ io.on('connection', function(client){
     client.on('text-message', function(msg){
         console.log("got text message");
         io.sockets.emit('text-message', msg);
+
+        getEntities(msg, function(entities){
+            currentEntities = entities;
+            io.sockets.emit("entities", entities);
+        });
+
+        if(timeout){
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(function(){
+            if(!currentEntities){
+                return;
+            }
+
+            var people = [];
+            var entity = null;
+            for(var i = 0; i < currentEntities.entities.length; i++){
+                if(currentEntities.entities[i].type == "PERSON"){
+                    people.push(currentEntities.entities[i]);
+                }
+            }
+
+            var questionText = "Tell me more about that";
+            if(people.length > 0){
+                var i = Math.floor(Math.random() * people.length);
+                questionText = "Tell me more about " + people[i].name;
+            } else if(currentEntities.entities.length > 0) {
+                var i = Math.floor(Math.random() * currentEntities.entities.length);
+                questionText = "Tell me more about " + currentEntities.entities[i].name;
+            }
+
+            io.sockets.emit('text-message', questionText);
+        }, 3000);
     });
 });
 
