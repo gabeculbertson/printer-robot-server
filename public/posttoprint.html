@@ -1,8 +1,64 @@
 <head>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+	<script type="text/javascript">
+		var socket = io('/');
+		var italicsOn = false;
+
+		socket.on("text-message", function(text){
+			$("#text-history").append("<br>" + text);
+		});
+
+		$(document).ready(function(){
+			$("#text-in").keypress(function(e){
+				console.log(e.keyCode);
+				if(e.keyCode == 13){
+					var text = $("#text-in").val();
+					if(italicsOn){
+						text = '<span style="font-style: italic;">' + text + '</span>';
+					}
+					socket.emit('text-message', text);
+					$.post('/print-img', { text: text });
+					$("#text-in").val("");
+				}
+			});
+
+			$('#toggle-italics').click(function(){
+				if(italicsOn){
+					$('#toggle-italics').html("Turn italics on");
+					italicsOn = false;
+				} else {
+					$('#toggle-italics').html("Turn italics off");
+					italicsOn = true;
+				}
+			});
+
+			$("#text-in2").keypress(function(e){
+				console.log(e.keyCode);
+				if(e.keyCode == 13){
+					var text = $("#text-in2").val();
+
+					console.log("sending msg to socket");
+					socket.emit('text-message', text);
+
+					$.post('/print', { text: text });
+					$("#text-in2").val("");
+				}
+			});
+		});
+	</script>
 </head>
 <body>
-	<form method="POST" action="/print" enctype='application/json'>
-		<textarea class="input" rows="10" name="text"></textarea>
-		<input type="submit" value="Submit">
-	</form>
-</body>
+	<!-- <form method="POST" action="/print" enctype='application/json'> -->
+	<div id="text-history" style="width: 600px; height: 600px; border: 1px solid black; overflow-y: auto">
+
+	</div>
+
+	<input id="text-in" type="text" class="input" rows="10" name="text" value="" placeholder="enter text...">
+	<button id='toggle-italics'>Turn italics on</button>
+
+		<!-- <input id="text-in2" type="text" class="input" rows="10" name="text" value="" placeholder="enter text..."> -->
+		<!-- <input type="submit" value="Submit"> -->
+	<!-- </form> -->
+</body>	
