@@ -46,6 +46,8 @@ app.post('/print', function(req, res){
 	});
 });
 
+require('./libs/entity-route.js')(app, '/entities');
+
 var httpServer = http.createServer(app);
 httpServer.listen(80);
 

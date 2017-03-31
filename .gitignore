@@ -52,3 +52,5 @@ log.txt
 log/*.txt
 
 sample.pdf
+token.txt
+key.json
