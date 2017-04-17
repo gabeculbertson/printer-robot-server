@@ -8,16 +8,32 @@ var pdf = require('html-pdf');
 var needle = require('needle');
 var multer = require('multer');
 
+var eliza = require('./libs/eliza');
+var StoryPlayer = require('./libs/story-player.js');
+
 var getEntities = require('./libs/entity-request').getEntities;
 
 var exec = require('child_process').exec;
 var cmd = 'xelatex out.tex';
+
+var raspberryAddress = "http://192.168.1.65";
 
 var options = { width: "48mm", height: "1000mm" };
 
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
+
+var goToSleepTimeout = null;
+function wakeUp(){
+    if(goToSleepTimeout){
+        clearTimeout(goToSleepTimeout);
+    }
+    needle.get(raspberryAddress + '/robot/listen');
+    goToSleepTimeout = setTimeout(function(){
+        needle.get(raspberryAddress + '/robot/sleep');
+    }, 60000);
+}
 
 app.get('/', function(req, res){
 	res.sendFile(__dirname + '/public/index.html');
@@ -42,7 +58,7 @@ app.get('/print', function(req, res){
 
 //         console.log('pdf generated');
 
-//         needle.post("raspberrypi/print_pdf", data, {
+//         needle.post(raspberryAddress + "/print_pdf", data, {
 //             multipart: true
 //         }, function(err,result) {
 //             console.log("result", result.body);
@@ -69,7 +85,7 @@ app.post('/print', function(req, res){
 
         console.log('pdf generated: ', new Date().getTime() - start);
 
-        needle.post("raspberrypi/print_pdf", data, {
+        needle.post(raspberryAddress + "/print_pdf", data, {
             multipart: true
         }, function(err,result) {
             console.log("result", result.body);
@@ -80,10 +96,10 @@ app.post('/print', function(req, res){
 
 app.post('/print-text', function(req, res){
     console.log("got: " + req.body.text);
-    needle.post('raspberrypi/print-text', { text: req.body.text });
+    needle.post(raspberryAddress + '/print-text', { text: req.body.text });
 });
 
-app.post('/print-img', function(req, res){
+app.post('/print-img', function(req, out_res){
     needle.post('localhost:8081/print', { text: req.body.text }, function(err, res){
         if(!res){
             return;
@@ -99,11 +115,14 @@ app.post('/print-img', function(req, res){
             }
         }
 
-        needle.post("raspberrypi/print_img", data, {
+        needle.post(raspberryAddress + "/print_img", data, {
             multipart: true
         }, function(err,result) {
-            console.log("result", result.body);
+            if(result){
+                console.log("result", result.body);
+            }
         });
+        out_res.write("done");
     });
 });
 
@@ -115,15 +134,41 @@ httpServer.listen(80);
 var io = require('socket.io')(httpServer);
 var timeout = null;
 var currentEntities = {};
+var lastLine = "";
+
+var monthNames = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
 
 io.on('connection', function(client){
-    io.sockets.emit('text-message', "Hello human. What do you want to write about today?");
+    // io.sockets.emit('text-message', "Hello human. What do you want to write about today?");
+    var storyPlayer = null;
+    client.on('begin-story', function(){
+        storyPlayer = new StoryPlayer(client);
+    });
 
     console.log('connected');
     client.on('event', function(data){ console.log("client event"); });
     client.on('disconnect', function(){ console.log("client disconnect"); });
 
+    client.on('keypress', function(){
+        wakeUp();
+    });
+
     client.on('text-message', function(msg){
+        lastLine = msg;
+
+        if(storyPlayer){
+            var split = msg.split(" ");
+            var words = 0;
+            for(var i in split){
+                if(split[i] != ""){
+                    words++;
+                }
+            }
+            storyPlayer.addWords(words);
+        }
+
         console.log("got text message");
         io.sockets.emit('text-message', msg);
 
@@ -131,6 +176,8 @@ io.on('connection', function(client){
             currentEntities = entities;
             io.sockets.emit("entities", entities);
         });
+
+        wakeUp();
 
         if(timeout){
             clearTimeout(timeout);
@@ -140,26 +187,37 @@ io.on('connection', function(client){
                 return;
             }
 
-            var people = [];
-            var entity = null;
-            for(var i = 0; i < currentEntities.entities.length; i++){
-                if(currentEntities.entities[i].type == "PERSON"){
-                    people.push(currentEntities.entities[i]);
-                }
-            }
+            // var people = [];
+            // var entity = null;
+            // for(var i = 0; i < currentEntities.length; i++){
+            //     if(currentEntities[i].type == "PERSON"){
+            //         people.push(currentEntities[i]);
+            //     }
+            // }
 
-            var questionText = "Tell me more about that";
-            if(people.length > 0){
-                var i = Math.floor(Math.random() * people.length);
-                questionText = "Tell me more about " + people[i].name;
-            } else if(currentEntities.entities.length > 0) {
-                var i = Math.floor(Math.random() * currentEntities.entities.length);
-                questionText = "Tell me more about " + currentEntities.entities[i].name;
-            }
+            // var questionText = "Tell me more about that";
+            // if(people.length > 0){
+            //     var i = Math.floor(Math.random() * people.length);
+            //     questionText = "Tell me more about " + people[i].name;
+            // } else if(currentEntities.length > 0) {
+            //     var i = Math.floor(Math.random() * currentEntities.length);
+            //     questionText = "Tell me more about " + currentEntities[i].name;
+            // }
 
-            io.sockets.emit('text-message', questionText);
-        }, 3000);
+            // io.sockets.emit('text-message', questionText);
+            // needle.post('localhost/print-img', { text: "<span style='font-size: 15mm'>" + questionText + "</span>" });
+            
+            // var resp = eliza.getResponse(lastLine);
+            // io.sockets.emit('text-message', resp);
+            // needle.post('localhost/print-img', { text: resp });
+        }, 30000);
     });
+
+    var d = new Date();
+    var dString = monthNames[d.getMonth()] + " " + d.getDay() + ", " + d.getFullYear();
+    var initialText = '<span id="date-container">' + dString + '</span><br><hr style="width:100%">';
+    client.emit('text-message', initialText);
+    needle.post('localhost/print-img', { text: initialText });
 });
 
 console.log('server started on 80');

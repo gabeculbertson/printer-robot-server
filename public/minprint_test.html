@@ -1,0 +1,37 @@
+<head>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+	<script type="text/javascript" src="/js/get-url-parameter.js"></script>
+	<script type="text/javascript" src="/js/printer-interaction.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="/css/printer-interface.css">
+
+	<script type="text/javascript">
+		// var monthNames = ["January", "February", "March", "April", "May", "June",
+		//   "July", "August", "September", "October", "November", "December"
+		// ];
+
+		// $(document).ready(function(){
+		// 	var d = new Date();
+
+		// 	$("#date-container").html(monthNames[d.getMonth()] + " " + d.getDay() + ", " + d.getFullYear());
+		// });
+	</script>
+</head>
+<body>
+	<!-- <br><br><br><br> -->
+	<div style="text-align: center">
+		<div id="wrapper" style="width: 600px; display: inline-block">
+			<div id="text-history" style="text-align: left; height: 60%; overflow-y: scroll;">
+				<div id="text-history-inner">
+					<!-- <span id="date-container">123</span>
+					<div style="width:100%"><hr></div> -->
+				</div>
+			</div>
+			<hr>
+			<div id="choices"></div>
+			<textarea id="text-in" class="typed-text" type="text" class="input" name="text" value="" placeholder="write something..." style="width:100%"></textarea>
+		</div><br>
+	</div>
+</body>	

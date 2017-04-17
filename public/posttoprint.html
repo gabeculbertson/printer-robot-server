@@ -13,8 +13,8 @@
 		socket.on("entities", function(res){
 			console.log(res);
 			var arr = [];
-			for(var i in res.entities){
-				var e = res.entities[i];
+			for(var i in res){
+				var e = res[i];
 				arr.push(e.type + ": " + e.name);
 			}
 			$("#entities").html(arr.join("<br>"));
@@ -22,9 +22,14 @@
 
 		$(document).ready(function(){
 			$("#text-in").keypress(function(e){
-				// console.log(e.keyCode);
+				socket.emit('keypress');
+				
 				if(e.keyCode == 13){
 					var text = $("#text-in").val();
+					if(text == ""){
+						return;
+					}
+
 					if(italicsOn){
 						text = '<span style="font-style: italic;">' + text + '</span>';
 					}

@@ -1,0 +1,83 @@
+@font-face {
+    font-family: FuturaX;
+    src: url("/VTypewriter-Royal.otf") format('truetype');
+}
+
+body {
+	font-family: FuturaX;
+	font-size: xx-large;
+	padding: 0;
+	margin: 0;
+	background-color: black;
+	overflow-y: hidden;
+	/*background-image: url("/cork.jpg");*/
+}
+
+#wrapper {
+	background-color: white;
+	height: 100%;
+	/*overflow-y: hidden;*/
+	box-shadow: 2px 2px 24px rgba(0, 0, 0, 0.5);
+	padding: 16px; 
+}
+
+textarea:focus, input:focus{
+    outline: none;
+}
+
+textarea {
+    background-color: transparent;
+    border: none;
+}
+
+.typed-text {
+	font-family: FuturaX;
+	font-size: xx-large;
+	/*width: 80mm; */
+	width: 100%;
+	font-size: xx-large;
+	text-align: left;
+	padding: 4px;
+}
+
+ textarea.typed-text {
+	/*width: 80mm; */
+	width: 100%;
+	font-size: xx-large;
+	height: 100%;
+}
+
+*:focus {
+    outline: none;
+}
+
+#text-history {
+	display: flex;
+	align-items: flex-end;
+	height: 150px;
+	border: solid 1px gray;
+	font-size: large;
+}
+
+.choice{
+	text-align: left;
+}
+
+.key-img {
+	font-family: arial;
+	background: #595959;
+	box-shadow: inset 4px 4px 1px rgba(255,255,255,0.8), inset -4px -4px 1px rgba(0,0,0,0.5);
+	width: 36px;
+	height: 36px;
+	color: white;
+	font-size: large;
+	text-align: left;
+	padding: 0;
+	max-width: 36px;
+	max-height: 36px;
+	display: inline-block;
+}
+
+.inner{
+	padding: 12px 0 0 8px;
+}
